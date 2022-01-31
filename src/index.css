@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .duration-0 {
+    transition-duration: 0ms;
+  }
+}
