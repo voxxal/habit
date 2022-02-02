@@ -9,6 +9,12 @@ function App() {
     level: 1,
     streaks: [],
   });
+  const nextLevelExp = (level: number) => 2 ** (level / 10) + 100
+  const nextLevelTotalExp = (level : number) => {
+    /*
+     TODO FIX SCALING 
+    */
+  }
   useEffect(() => {
     setState(
       Object.assign(
