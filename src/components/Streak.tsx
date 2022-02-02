@@ -10,21 +10,18 @@ function Streak({
 }: {
   data: StreakData;
   rename: any;
-  complete: any;
+  complete: any; //FIXME bruhv
   remove: any;
 }) {
   let textarea: HTMLTextAreaElement | null;
-  const expandEle = (e: any) => {
-    e.target.style.height = "auto";
-    e.target.style.height = e.target.scrollHeight + "px";
-  };
 
   useEffect(() => {
-    expandEle({ target: textarea }); // i feel dirty
-  }, []);
+    (textarea as HTMLTextAreaElement).style.height = "auto";
+    (textarea as HTMLTextAreaElement).style.height = (textarea as HTMLTextAreaElement).scrollHeight + "px";
+  }, [data.name]);
 
   return (
-    <div className="m-4 flex h-72 w-64 flex-col rounded-xl bg-slate-100 shadow-md">
+    <div className="m-2 flex h-72 w-64 flex-col rounded-xl bg-slate-100 shadow-md">
       <button
         className="float-right h-9 w-9 self-end rounded-tr-xl bg-slate-200 p-2 align-top font-semibold text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
         onClick={remove}
@@ -39,7 +36,6 @@ function Streak({
           maxLength={48}
           value={data.name}
           onChange={rename}
-          onInput={expandEle}
           ref={(el) => (textarea = el)}
         ></textarea>
         <h4 className="my-1">

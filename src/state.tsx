@@ -9,6 +9,7 @@ interface StreakData {
 
 interface State {
   experience: number;
+  level: number;
   streaks: StreakData[];
 }
 

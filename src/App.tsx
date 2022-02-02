@@ -6,6 +6,7 @@ import { State } from "./state";
 function App() {
   let [state, setState] = useState<State>({
     experience: 0,
+    level: 1,
     streaks: [],
   });
   useEffect(() => {
@@ -49,10 +50,17 @@ function App() {
 
   return (
     <div className="flex flex-col">
-      <div
+      {/* <div
         className=" fixed h-1 bg-purple-500 transition-all duration-700"
-        style={{ width: `${state.experience}%` }}
-      ></div>
+        style={{ width: `${(state.experience / (2 ** (state.level / 10) + 100)) * 100}%` }}
+      ></div> */}
+      <div className="flex flex-col items-center self-center w-64">
+        Level:
+        <div className="w-full h-2">
+          <div className="h-2 bg-slate-400"></div>
+          <div className="-m-2 h-2 bg-purple-500 transition-all duration-700" style={{ width: `${20}%` }}></div>
+        </div>
+      </div>
       <div className="flex flex-row flex-wrap">
         {state.streaks.map((streak, i) => (
           <Streak
@@ -70,7 +78,7 @@ function App() {
               newStreaks[i].lastCheck = dayjs();
               setState({
                 ...state,
-                experience: state.experience + 10,
+                experience: state.experience + Math.min(state.experience + newStreaks[i].streak < 30 ? (Math.log(newStreaks[i].streak) / Math.log(1.02)) + 10 : newStreaks[i].streak ** 1.02 + 65, 500),
                 streaks: newStreaks,
               });
             }}
@@ -85,7 +93,7 @@ function App() {
           />
         ))}
         <div
-          className="group m-4 flex h-72 w-64 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-400 p-8  text-slate-400 transition-colors hover:border-blue-400 hover:text-blue-400"
+          className="group m-2 flex h-72 w-64 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-400 p-8  text-slate-400 transition-colors hover:border-blue-400 hover:text-blue-400"
           onClick={createNewStreak}
         >
           <svg
