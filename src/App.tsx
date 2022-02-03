@@ -9,12 +9,17 @@ function App() {
     level: 1,
     streaks: [],
   });
-  const nextLevelExp = (level: number) => 2 ** (level / 10) + 100
+  const nextLevelExp = (level: number) => Math.floor(Math.min(10 * 1.3 ** (level - 1), 1000))
   const nextLevelTotalExp = (level : number) => {
-    /*
-     TODO FIX SCALING 
-    */
+    let exp = 0;
+    for(let i = 1; i <= level; i++) {
+      exp += nextLevelExp(i)
+    }
+    return Math.floor(exp);
   }
+  const expCurrentLevel = (level: number, exp: number) =>
+    nextLevelExp(level) - (nextLevelTotalExp(level) - exp)
+
   useEffect(() => {
     setState(
       Object.assign(
@@ -61,11 +66,14 @@ function App() {
         style={{ width: `${(state.experience / (2 ** (state.level / 10) + 100)) * 100}%` }}
       ></div> */}
       <div className="flex flex-col items-center self-center w-64">
-        Level:
+        Level: {state.level}
         <div className="w-full h-2">
           <div className="h-2 bg-slate-400"></div>
-          <div className="-m-2 h-2 bg-purple-500 transition-all duration-700" style={{ width: `${20}%` }}></div>
+          {/* Floats to the side a bit */}
+          <div className="-m-2 h-2 bg-purple-500 transition-all duration-700" style={{ width: `${(expCurrentLevel(state.level, state.experience) / nextLevelExp(state.level)) * 100}%` }}></div>
         </div>
+        Total: {state.experience} <br />
+        {expCurrentLevel(state.level, state.experience)} / {nextLevelExp(state.level)}
       </div>
       <div className="flex flex-row flex-wrap">
         {state.streaks.map((streak, i) => (
@@ -82,9 +90,14 @@ function App() {
               let newStreaks = [...state.streaks];
               newStreaks[i].streak += 1;
               newStreaks[i].lastCheck = dayjs();
+              let exp = state.experience + 3 * (2 / newStreaks[i].streak)
+              let levelUp = false; //FIX ME multiple levels
+              if (exp >= nextLevelTotalExp(state.level)) levelUp = true;
+              
               setState({
                 ...state,
-                experience: state.experience + Math.min(state.experience + newStreaks[i].streak < 30 ? (Math.log(newStreaks[i].streak) / Math.log(1.02)) + 10 : newStreaks[i].streak ** 1.02 + 65, 500),
+                level: levelUp ? state.level + 1 : state.level,
+                experience: Math.floor(exp),
                 streaks: newStreaks,
               });
             }}
