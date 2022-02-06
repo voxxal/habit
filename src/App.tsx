@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import Streak from "./components/Streak";
-import { State } from "./state";
+import { State, StreakData } from "./state";
 
 function App() {
   let [state, setState] = useState<State>({
@@ -9,16 +9,20 @@ function App() {
     level: 1,
     streaks: [],
   });
-  const nextLevelExp = (level: number) => Math.floor(Math.min(10 * 1.3 ** (level - 1), 1000))
-  const nextLevelTotalExp = (level : number) => {
+  const nextLevelExp = (level: number) =>
+    Math.floor(Math.min(10 * 1.3 ** (level - 1), 1000));
+  const nextLevelTotalExp = (level: number) => {
     let exp = 0;
-    for(let i = 1; i <= level; i++) {
-      exp += nextLevelExp(i)
+    for (let i = 1; i <= level; i++) {
+      exp += nextLevelExp(i);
     }
     return Math.floor(exp);
-  }
+  };
   const expCurrentLevel = (level: number, exp: number) =>
-    nextLevelExp(level) - (nextLevelTotalExp(level) - exp)
+    nextLevelExp(level) - (nextLevelTotalExp(level) - exp);
+  
+  const progressToNextLevel = (level: number, exp: number) => expCurrentLevel(level, exp) /
+  nextLevelExp(level)
 
   useEffect(() => {
     setState(
@@ -31,10 +35,15 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      state.streaks.map((streak) => {
-        if (dayjs().diff(streak.lastCheck, "day") > 2) {
-          streak.streak = 0;
-        }
+      setState({
+        ...state,
+        streaks: state.streaks.map((streak) => {
+          let newStreak: StreakData = { ...streak };
+          if (dayjs().diff(streak.lastCheck, "day") >= 2) {
+            newStreak.streak = 0;
+          }
+          return newStreak;
+        }),
       });
     }, 1000 * 60 * 5);
     return () => clearInterval(interval);
@@ -65,15 +74,17 @@ function App() {
         className=" fixed h-1 bg-purple-500 transition-all duration-700"
         style={{ width: `${(state.experience / (2 ** (state.level / 10) + 100)) * 100}%` }}
       ></div> */}
-      <div className="flex flex-col items-center self-center w-64">
+      <div className="flex w-64 flex-col items-center self-center">
         Level: {state.level}
-        <div className="w-full h-2">
+        <div className="h-2 w-full">
           <div className="h-2 bg-slate-400"></div>
-          {/* Floats to the side a bit */}
-          <div className="-m-2 h-2 bg-purple-500 transition-all duration-700" style={{ width: `${(expCurrentLevel(state.level, state.experience) / nextLevelExp(state.level)) * 100}%` }}></div>
+          <div
+            className="-mt-2 h-2 bg-purple-500 transition-all duration-700"
+            style={{ width: `${ progressToNextLevel(state.level, state.experience) * 100 }%` }}
+          ></div>
         </div>
-        Total: {state.experience} <br />
-        {expCurrentLevel(state.level, state.experience)} / {nextLevelExp(state.level)}
+        {expCurrentLevel(state.level, state.experience)} /{" "}
+        {nextLevelExp(state.level)}
       </div>
       <div className="flex flex-row flex-wrap">
         {state.streaks.map((streak, i) => (
@@ -90,10 +101,10 @@ function App() {
               let newStreaks = [...state.streaks];
               newStreaks[i].streak += 1;
               newStreaks[i].lastCheck = dayjs();
-              let exp = state.experience + 3 * (2 / newStreaks[i].streak)
+              let exp = state.experience + 3 * (2 / newStreaks[i].streak);
               let levelUp = false; //FIX ME multiple levels
               if (exp >= nextLevelTotalExp(state.level)) levelUp = true;
-              
+
               setState({
                 ...state,
                 level: levelUp ? state.level + 1 : state.level,
