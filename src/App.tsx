@@ -76,7 +76,7 @@ function App() {
       ></div> */}
       <div className="flex w-64 flex-col items-center self-center">
         Level: {state.level}
-        <div className="h-2 w-full">
+        <div className="h-2 w-full overflow-hidden rounded-full">
           <div className="h-2 bg-slate-400"></div>
           <div
             className="-mt-2 h-2 bg-purple-500 transition-all duration-700"
