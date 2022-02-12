@@ -1,16 +1,17 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import Streak from "./components/Streak";
 import Home from "./Home";
+import { uid } from "./util";
 import { State, StreakData } from "./state";
+import { Route, Routes } from "react-router-dom";
 
 function App() {
   let [state, setState] = useState<State>({
+    userId: uid.getUniqueID(),
     experience: 0,
     level: 1,
     streaks: [],
   });
-
 
   useEffect(() => {
     setState(
@@ -41,9 +42,11 @@ function App() {
     localStorage.setItem("habitsSave", JSON.stringify(state));
   }, [state]);
 
-
-
-  return (<Home state={state} setState={setState} />)
+  return (
+    <Routes>
+      <Route path="/" element={<Home state={state} setState={setState} />} />
+    </Routes>
+  );
 }
 
 export default App;

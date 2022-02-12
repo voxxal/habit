@@ -1,3 +1,7 @@
+import Snowflake from "nodejs-snowflake";
+
+//@ts-ignore
+const uid = new Snowflake({instance_id: 2131});
 const nextLevelExp = (level: number) =>
   Math.floor(Math.min(10 * 1.3 ** (level - 1), 1000));
 const nextLevelTotalExp = (level: number) => {
@@ -13,4 +17,4 @@ const expCurrentLevel = (level: number, exp: number) =>
 const progressToNextLevel = (level: number, exp: number) =>
   expCurrentLevel(level, exp) / nextLevelExp(level);
 
-export { nextLevelExp, nextLevelTotalExp, expCurrentLevel, progressToNextLevel }
+export { uid, nextLevelExp, nextLevelTotalExp, expCurrentLevel, progressToNextLevel }
