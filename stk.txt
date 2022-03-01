@@ -1,2 +1,0 @@
-react-router-dom is not calling useEffect of parent element
-I'm trying to write a simple todo app where you can click on any of the todos to open up a more detailed view of the todo. When I try loading the data from localStorage and directly heading to the link of one of the todos, the useEffect that fetches the data 
