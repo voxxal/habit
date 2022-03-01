@@ -1,13 +1,8 @@
 import dayjs from "dayjs";
-import Snowflake from "nodejs-snowflake";
-import Streak from "./components/Streak";
-import { State } from "./state";
-import {
-  expCurrentLevel,
-  nextLevelExp,
-  nextLevelTotalExp,
-  progressToNextLevel,
-} from "./util";
+import Streak from "../components/Streak";
+import { State } from "../state";
+import { nanoid } from "nanoid";
+import { expCurrentLevel, nextLevelExp, progressToNextLevel } from "../util";
 
 function Home({ state, setState }: { state: State; setState: any }) {
   const createNewStreak = () => {
@@ -16,6 +11,7 @@ function Home({ state, setState }: { state: State; setState: any }) {
       streaks: [
         ...state.streaks,
         {
+          id: nanoid(),
           name: "",
           streak: 0,
           startTime: dayjs(),
@@ -23,6 +19,7 @@ function Home({ state, setState }: { state: State; setState: any }) {
         },
       ],
     });
+    console.log(state);
   };
   return (
     <div className="flex flex-col">
@@ -49,37 +46,11 @@ function Home({ state, setState }: { state: State; setState: any }) {
       <div className="flex flex-row flex-wrap">
         {state.streaks.map((streak, i) => (
           <Streak
-            key={dayjs(streak.startTime).valueOf()}
+            key={streak.id}
             data={streak}
-            // STOP USING ANY AHHHHHHH
-            rename={(e: any) => {
-              let newStreaks = [...state.streaks];
-              newStreaks[i].name = e.target.value;
-              setState({ ...state, streaks: newStreaks });
-            }}
-            complete={(e: any) => {
-              let newStreaks = [...state.streaks];
-              newStreaks[i].streak += 1;
-              newStreaks[i].lastCheck = dayjs();
-              let exp = state.experience + 3 * (2 / newStreaks[i].streak);
-              let levelUp = false; //FIX ME multiple levels
-              if (exp >= nextLevelTotalExp(state.level)) levelUp = true;
-
-              setState({
-                ...state,
-                level: levelUp ? state.level + 1 : state.level,
-                experience: Math.floor(exp),
-                streaks: newStreaks,
-              });
-            }}
-            remove={(e: any) => {
-              let newStreaks = [...state.streaks];
-              newStreaks.splice(i, 1);
-              setState({
-                ...state,
-                streaks: newStreaks,
-              });
-            }}
+            state={state}
+            setState={setState}
+            index={i}
           />
         ))}
         <div

@@ -1,7 +1,7 @@
 import { Dayjs } from "dayjs";
 
 interface StreakData {
-  id: number;
+  id: string;
   name: string;
   streak: number;
   startTime: Dayjs;
@@ -9,7 +9,7 @@ interface StreakData {
 }
 
 interface State {
-  userId: number;
+  userId: string;
   experience: number;
   level: number;
   streaks: StreakData[];

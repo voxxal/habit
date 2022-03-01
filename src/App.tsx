@@ -1,26 +1,30 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import Home from "./Home";
-import { uid } from "./util";
+import Home from "./pages/Home";
+import Streak from "./pages/Streak";
 import { State, StreakData } from "./state";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { nanoid } from "nanoid";
+
+declare global {
+  interface Crypto {
+    randomUUID: () => string;
+  }
+}
 
 function App() {
-  let [state, setState] = useState<State>({
-    userId: uid.getUniqueID(),
-    experience: 0,
-    level: 1,
-    streaks: [],
-  });
-
-  useEffect(() => {
-    setState(
-      Object.assign(
-        { ...state },
-        JSON.parse(localStorage.getItem("habitsSave") || "{}")
-      )
-    );
-  }, []);
+  const location = useLocation();
+  const [state, setState] = useState<State>(() =>
+    Object.assign(
+      {
+        userId: nanoid(), //TODO temp solution
+        experience: 0,
+        level: 1,
+        streaks: [],
+      },
+      JSON.parse(localStorage.getItem("habitsSave") || "{}")
+    )
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,6 +49,10 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home state={state} setState={setState} />} />
+      <Route
+        path="/streak/:streakId"
+        element={<Streak state={state} setState={setState} />}
+      />
     </Routes>
   );
 }
