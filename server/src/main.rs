@@ -1,3 +1,5 @@
+use server::*;
+
 fn main() {
-    println!("Hello, world!");
+	let connection = establish_connection();
 }
