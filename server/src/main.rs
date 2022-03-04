@@ -5,6 +5,6 @@ use diesel::prelude::*;
 
 fn main() {
     let connection = establish_connection();
-    let results = users.limit(10).load::<Users>(&connection).expect("error loading posts");
-    println!("recieved {} posts", results.len());
+    let results = users.limit(10).load::<Users>(&connection).expect("error loading users");
+    println!("recieved {} users", results.len());
 }
