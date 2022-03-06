@@ -9,3 +9,6 @@ edition = "2021"
 dotenv = "0.15.0"
 diesel = { version = "1.4.8", features = ["postgres", "chrono"] }
 chrono = "0.4"
+actix-web = "4"
+serde = { version = "1.0.136", features = ["derive"] }
+actix-files = "0.6.0"
