@@ -1,4 +1,11 @@
 table! {
+    tokens (token) {
+        token -> Varchar,
+        owner -> Varchar,
+    }
+}
+
+table! {
     users (id) {
         id -> Varchar,
         created_at -> Timestamptz,
@@ -9,3 +16,7 @@ table! {
         level -> Int2,
     }
 }
+
+joinable!(tokens -> users (owner));
+
+allow_tables_to_appear_in_same_query!(tokens, users,);
