@@ -1,13 +1,13 @@
 import dayjs from "dayjs";
-import { StreakData } from "../state";
+import { TileData } from "../state";
 import { MouseEventHandler } from "react";
 
 function CompleteButton({
   data,
   complete,
 }: {
-  data: StreakData;
-  complete: (e: MouseEventHandler<HTMLButtonElement>) => void;
+  data: TileData;
+  complete: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
     <>

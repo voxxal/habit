@@ -1,26 +1,12 @@
 import dayjs from "dayjs";
-import Streak from "../components/Streak";
-import { State } from "../state";
+import Tile from "../components/Tile";
+import { ActionType, State, StateContext } from "../state";
 import { nanoid } from "nanoid";
 import { expCurrentLevel, nextLevelExp, progressToNextLevel } from "../util";
+import { useContext } from "react";
 
-function Home({ state, setState }: { state: State; setState: any }) {
-  const createNewStreak = () => {
-    setState({
-      ...state,
-      streaks: [
-        ...state.streaks,
-        {
-          id: nanoid(),
-          name: "",
-          streak: 0,
-          startTime: dayjs(),
-          lastCheck: dayjs().subtract(1, "day"),
-        },
-      ],
-    });
-    console.log(state);
-  };
+function HomePage() {
+  const { state, dispatch } = useContext(StateContext);
   return (
     <div className="flex flex-col">
       {/* <div
@@ -44,18 +30,13 @@ function Home({ state, setState }: { state: State; setState: any }) {
         {nextLevelExp(state.level)}
       </div>
       <div className="flex flex-row flex-wrap">
-        {state.streaks.map((streak, i) => (
-          <Streak
-            key={streak.id}
-            data={streak}
-            state={state}
-            setState={setState}
-            index={i}
-          />
+        {state.tiles.map((tile, i) => (
+          <Tile key={tile.id} data={tile} dispatch={dispatch} />
         ))}
+
         <div
           className="group m-2 flex h-72 w-64 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-400 p-8  text-slate-400 transition-colors hover:border-blue-400 hover:text-blue-400"
-          onClick={createNewStreak}
+          onClick={() => dispatch({ type: ActionType.CreateTile, payload: "" })}
         >
           <svg
             className="text-slate-400 transition-colors group-hover:text-blue-400"
@@ -73,4 +54,4 @@ function Home({ state, setState }: { state: State; setState: any }) {
   );
 }
 
-export default Home;
+export default HomePage;
