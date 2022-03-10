@@ -1,43 +1,38 @@
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
-import Home from "./pages/Home";
-import Streak from "./pages/Streak";
-import { State, StreakData } from "./state";
-import { Route, Routes, useLocation } from "react-router-dom";
-import { nanoid } from "nanoid";
-
-declare global {
-  interface Crypto {
-    randomUUID: () => string;
-  }
-}
+import { useEffect, useState, useReducer } from "react";
+import HomePage from "./pages/Home";
+import TilePage from "./pages/Tile";
+import {
+  State,
+  TileData,
+  StateContext,
+  stateReducer,
+  initalState,
+  ActionType,
+} from "./state";
+import { Route, Routes } from "react-router-dom";
 
 function App() {
-  const location = useLocation();
-  const [state, setState] = useState<State>(() =>
-    Object.assign(
-      {
-        userId: nanoid(), //TODO temp solution
-        experience: 0,
-        level: 1,
-        streaks: [],
-      },
-      JSON.parse(localStorage.getItem("habitsSave") || "{}")
-    )
-  );
+  const [state, dispatch] = useReducer(stateReducer, initalState);
+  //@ts-ignore
+  window.state = state;
+  useEffect(() => {
+    let data = localStorage.getItem("habitsSave");
+    if (!data) {
+      console.log("Can't fetch data from localStorage");
+      return;
+    }
+
+    if (JSON.parse(data)) {
+      dispatch({ type: ActionType.FetchData, payload: JSON.parse(data) });
+      return;
+    }
+    console.log("Failed to parse data");
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setState({
-        ...state,
-        streaks: state.streaks.map((streak) => {
-          let newStreak: StreakData = { ...streak };
-          if (dayjs().diff(streak.lastCheck, "day") >= 2) {
-            newStreak.streak = 0;
-          }
-          return newStreak;
-        }),
-      });
+      dispatch({ type: ActionType.UpdateStreaks });
     }, 1000 * 60 * 5);
     return () => clearInterval(interval);
   });
@@ -47,13 +42,15 @@ function App() {
   }, [state]);
 
   return (
-    <Routes>
-      <Route path="/" element={<Home state={state} setState={setState} />} />
-      <Route
-        path="/streak/:streakId"
-        element={<Streak state={state} setState={setState} />}
-      />
-    </Routes>
+    <StateContext.Provider value={{ state, dispatch }}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        {/* <Route
+          path="/tile/:tileId"
+          element={<TilePage state={state} setState={setState} />}
+        /> */}
+      </Routes>
+    </StateContext.Provider>
   );
 }
 
