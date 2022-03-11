@@ -62,22 +62,22 @@ const initalState: State = {
 
 const stateReducer = (state: State, action: Action) => {
   switch (action.type) {
-    case ActionType.FetchData:
+    case ActionType.FetchData: {
       return { ...initalState, ...action.payload };
-      break;
-    case ActionType.UpdateStreaks:
+    }
+    case ActionType.UpdateStreaks: {
       return {
         ...state,
         tiles: state.tiles.map((tile) => {
-          let newTiles: TileData = { ...tile };
+          const newTiles: TileData = { ...tile };
           if (dayjs().diff(tile.lastCheck, "day") >= 2) {
             newTiles.streak = 0;
           }
           return newTiles;
         }),
       };
-      break;
-    case ActionType.CreateTile:
+    }
+    case ActionType.CreateTile: {
       return {
         ...state,
         tiles: [
@@ -91,15 +91,15 @@ const stateReducer = (state: State, action: Action) => {
           },
         ],
       };
-      break;
-    case ActionType.DeleteTile:
+    }
+    case ActionType.DeleteTile: {
       return {
         ...state,
         tiles: state.tiles.filter((tile) => tile.id !== action.payload.id),
       };
-      break;
-    case ActionType.RenameTile:
-      let oldData = state.tiles.find(
+    }
+    case ActionType.RenameTile: {
+      const oldData = state.tiles.find(
         (tile) => tile.id === action.payload.data.id
       );
       if (!oldData) return state;
@@ -108,13 +108,13 @@ const stateReducer = (state: State, action: Action) => {
         ...state,
         tiles: state.tiles,
       };
-      break;
-    case ActionType.CompleteTile:
-      let newData = state.tiles.find((tile) => tile.id === action.payload.id);
+    }
+    case ActionType.CompleteTile: {
+      const newData = state.tiles.find((tile) => tile.id === action.payload.id);
       if (!newData) return state;
       newData.streak += 1;
       newData.lastCheck = dayjs();
-      let exp = state.experience + 1000 * (2 / newData.streak);
+      const exp = state.experience + 1000 * (2 / newData.streak);
       let levelUp = 0;
       while (exp >= nextLevelTotalExp(state.level + levelUp)) levelUp++;
 
@@ -124,7 +124,7 @@ const stateReducer = (state: State, action: Action) => {
         experience: Math.floor(exp),
         tiles: state.tiles,
       };
-      break;
+    }
     default:
       return state;
   }

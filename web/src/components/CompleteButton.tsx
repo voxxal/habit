@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { TileData } from "../state";
-import { MouseEventHandler } from "react";
+import React, { MouseEventHandler } from "react";
 
 function CompleteButton({
   data,
@@ -9,7 +9,7 @@ function CompleteButton({
   data: TileData;
   complete: MouseEventHandler<HTMLButtonElement>;
 }) {
-  return (
+  return ( //TODO change opinionated margin values for reuse.
     <>
       {dayjs().isSame(data.lastCheck, "day") ? (
         <button className="mt-auto h-10 w-full cursor-default items-center rounded-full border-2 border-dashed border-green-500 font-semibold text-green-500">
