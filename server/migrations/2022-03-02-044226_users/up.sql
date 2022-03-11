@@ -10,5 +10,5 @@ CREATE TABLE users (
 
 CREATE TABLE tokens (
 	token         VARCHAR     NOT NULL  PRIMARY KEY,
-	owner         VARCHAR     NOT NULL  REFERENCES   users(id)
+	owner         VARCHAR     NOT NULL  UNIQUE       REFERENCES   users(id)
 );

@@ -11,27 +11,21 @@ use argon2::{
 };
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
+use diesel::{prelude::*, result::Error};
 use dotenv::dotenv;
 use models::{NewToken, NewUser, Tokens, Users};
 use nanoid::nanoid;
 use schema::{tokens, users};
 use std::env;
 
-pub fn establish_connection() -> PgConnection {
+pub fn establish_connection() -> Result<PgConnection, ConnectionError> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    // TODO: return result type instead of panicking
     PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_user<'a>(
-    connect: &PgConnection,
-    username: &'a str,
-    password: &'a str,
-) -> Option<Users> {
+pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Result<Users, Error> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let hash = argon2
@@ -49,17 +43,12 @@ pub fn create_user<'a>(
         level: 1,
     };
 
-    match diesel::insert_into(users::table)
+    diesel::insert_into(users::table)
         .values(&new_user)
         .get_result(connect)
-    {
-        // TODO: return a result instead?
-        Ok(user) => Some(user),
-        Err(_) => None,
-    }
 }
 
-pub fn create_token(connect: &PgConnection, owner: &str) -> String {
+pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error> {
     let token = SaltString::generate(&mut OsRng);
     let new_token = NewToken {
         token: token.as_str(),
@@ -69,6 +58,11 @@ pub fn create_token(connect: &PgConnection, owner: &str) -> String {
     diesel::insert_into(tokens::table)
         .values(&new_token)
         .get_result::<Tokens>(connect)
-        .unwrap()
-        .token
+}
+
+pub fn valid_token(connect: &PgConnection, token: &str) -> bool {
+    match tokens::table.find(token).get_result::<Tokens>(connect) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }

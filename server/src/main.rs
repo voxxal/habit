@@ -1,6 +1,9 @@
 use self::models::Users;
 use self::schema::users::dsl::*;
-use actix_web::{get, post, web, App, HttpServer, Result};
+use actix_web::{
+    cookie::Cookie, get, http::header, post, web, App, HttpRequest, HttpResponse, HttpServer,
+    Responder, Result,
+};
 use argon2::{
     password_hash::{PasswordHash, PasswordVerifier},
     Argon2,
@@ -16,23 +19,25 @@ pub struct UserData {
 }
 
 #[post("/add")]
-async fn add(data: web::Json<UserData>) -> Result<String> {
+async fn add<'a>(data: web::Json<UserData>) -> impl Responder {
     // TODO: share connection across different threads?
     // or will this throttle the server
-    let connection = establish_connection();
-    Ok(
-        match create_user(&connection, &data.username, &data.password) {
-            Some(_) => format!("Added {} to database", data.username),
-            None => format!("User {} already exists", data.username),
+    match establish_connection() {
+        Ok(connection) => match create_user(&connection, &data.username, &data.password) {
+            Ok(_) => HttpResponse::Created().body(format!("Added {} to database", data.username)),
+            Err(_) => {
+                HttpResponse::BadRequest().body(format!("User {} already exists", data.username))
+            }
         },
-    )
+        Err(_) => HttpResponse::InternalServerError()
+            .body("error: problem establishing connection to database"),
+    }
 }
 
 #[post("/login")]
-async fn login(data: web::Json<UserData>) -> Result<String> {
-    let connection = establish_connection();
-    Ok(
-        match users
+async fn login(data: web::Json<UserData>) -> impl Responder {
+    match establish_connection() {
+        Ok(connection) => match users
             .filter(username.eq(data.username.clone()))
             .get_result::<Users>(&connection)
         {
@@ -44,33 +49,50 @@ async fn login(data: web::Json<UserData>) -> Result<String> {
                     )
                     .is_ok()
                 {
-                    create_token(&connection, &user_data.id)
+                    match create_token(&connection, &user_data.id) {
+                        Ok(entry) => HttpResponse::Ok()
+                            .cookie(Cookie::new("login_token", entry.token))
+                            .finish(),
+                        Err(_) => HttpResponse::BadRequest().body("user was already granted token"),
+                    }
                 } else {
-                    "error: problem verifying password".to_string()
+                    HttpResponse::BadRequest().body("user was already granted token")
                 }
             }
-            Err(_) => "error: user not found".to_string(),
+            Err(_) => HttpResponse::BadRequest().body("error: user not found"),
         },
-    )
+        Err(_) => HttpResponse::InternalServerError()
+            .body("error: problem establishing connection to database"),
+    }
 }
 
-#[get("/query/{user}")]
-async fn query_user(user: web::Path<String>) -> Result<String> {
-    let connection = establish_connection();
-    Ok(
-        match users
-            .filter(username.eq(user.to_string()))
-            .get_result::<Users>(&connection)
-        {
-            Ok(_) => format!("found user with username {}", user),
-            Err(_) => format!("could not find user with username {}", user),
+#[get("/account")]
+async fn account(req: HttpRequest) -> impl Responder {
+    match establish_connection() {
+        Ok(connection) => match req.headers().get(header::COOKIE) {
+            Some(cookie) => match cookie.to_str().and_then(|c| Ok(c.to_string())) {
+                Ok(cookie) => match cookie.split_once("=") {
+                    Some((_, value)) => {
+                        if valid_token(&connection, value) {
+                            HttpResponse::Ok().body("authenticated user")
+                        } else {
+                            HttpResponse::Unauthorized().finish()
+                        }
+                    }
+                    None => HttpResponse::BadRequest().body("invalid token"),
+                },
+                Err(_) => HttpResponse::BadRequest().body("invalid token"),
+            },
+            None => HttpResponse::BadRequest().body("no auth token found"),
         },
-    )
+        Err(_) => HttpResponse::InternalServerError()
+            .body("error: problem establishing connection to database"),
+    }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(query_user).service(add).service(login))
+    HttpServer::new(|| App::new().service(account).service(add).service(login))
         .bind(("127.0.0.1", 8080))?
         .run()
         .await
