@@ -3,7 +3,7 @@ import Tile from "../components/Tile";
 import { ActionType, State, StateContext } from "../state";
 import { nanoid } from "nanoid";
 import { expCurrentLevel, nextLevelExp, progressToNextLevel } from "../util";
-import { useContext } from "react";
+import React, { useContext } from "react";
 
 function HomePage() {
   const { state, dispatch } = useContext(StateContext);

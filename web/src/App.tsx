@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { useEffect, useState, useReducer } from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import HomePage from "./pages/Home";
 import TilePage from "./pages/Tile";
 import {
@@ -14,10 +14,8 @@ import { Route, Routes } from "react-router-dom";
 
 function App() {
   const [state, dispatch] = useReducer(stateReducer, initalState);
-  //@ts-ignore
-  window.state = state;
   useEffect(() => {
-    let data = localStorage.getItem("habitsSave");
+    const data = localStorage.getItem("habitsSave");
     if (!data) {
       console.log("Can't fetch data from localStorage");
       return;
@@ -45,10 +43,10 @@ function App() {
     <StateContext.Provider value={{ state, dispatch }}>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        {/* <Route
+        <Route
           path="/tile/:tileId"
-          element={<TilePage state={state} setState={setState} />}
-        /> */}
+          element={<TilePage />}
+        />
       </Routes>
     </StateContext.Provider>
   );

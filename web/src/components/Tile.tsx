@@ -12,7 +12,7 @@ function Streak({
   data: TileData;
   dispatch: React.Dispatch<Action>;
 }) {
-  let title: HTMLParagraphElement | null;
+  let title: HTMLParagraphElement | null; 
 
   useEffect(() => {
     if (title) {
@@ -23,12 +23,12 @@ function Streak({
 
   return (
     <Link
-      to={`/streak/${data.id}`}
+      to={`/tile/${data.id}`}
       className="m-2 flex h-72 w-64 flex-col rounded-xl bg-slate-100 shadow-md"
     >
       <button
         className="float-right h-9 w-9 self-end rounded-tr-xl bg-slate-200 p-2 align-top font-semibold text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
-        onClick={(e: any) => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           e.preventDefault();
           dispatch({ type: ActionType.DeleteTile, payload: data });
