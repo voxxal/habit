@@ -60,9 +60,9 @@ pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error
         .get_result::<Tokens>(connect)
 }
 
-pub fn valid_token(connect: &PgConnection, token: &str) -> bool {
+pub fn user_from_token(connect: &PgConnection, token: &str) -> Result<Users, Error> {
     match tokens::table.find(token).get_result::<Tokens>(connect) {
-        Ok(_) => true,
-        Err(_) => false,
+        Ok(entry) => users::table.find(entry.owner).get_result(connect),
+        Err(err) => Err(err),
     }
 }
