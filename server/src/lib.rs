@@ -13,7 +13,7 @@ use chrono::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::{prelude::*, result::Error};
 use dotenv::dotenv;
-use models::{NewToken, NewUser, Tokens, Users};
+use models::{Tokens, Users};
 use nanoid::nanoid;
 use schema::{tokens, users};
 use std::env;
@@ -33,12 +33,12 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
         .unwrap()
         .to_string();
 
-    let new_user = NewUser {
+    let new_user = Users {
         id: nanoid!(),
         created_at: Utc::now(),
-        username,
-        password: &hash,
-        password_salt: salt.as_str(),
+        username: username.to_string(),
+        password: hash,
+        password_salt: salt.as_str().to_string(),
         experience: 0.0,
         level: 1,
     };
@@ -50,9 +50,9 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
 
 pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error> {
     let token = SaltString::generate(&mut OsRng);
-    let new_token = NewToken {
-        token: token.as_str(),
-        owner,
+    let new_token = Tokens {
+        token: token.as_str().to_string(),
+        owner: owner.to_string(),
     };
 
     diesel::insert_into(tokens::table)
