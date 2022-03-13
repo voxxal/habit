@@ -10,20 +10,10 @@ use argon2::{
     Argon2,
 };
 use chrono::prelude::*;
-use diesel::pg::PgConnection;
-use diesel::{prelude::*, result::Error};
-use dotenv::dotenv;
+use diesel::{pg::PgConnection, prelude::*, result::Error};
 use models::{Tokens, Users};
 use nanoid::nanoid;
 use schema::{tokens, users};
-use std::env;
-
-pub fn establish_connection() -> Result<PgConnection, ConnectionError> {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-}
 
 pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Result<Users, Error> {
     let salt = SaltString::generate(&mut OsRng);
@@ -48,6 +38,13 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
         .get_result(connect)
 }
 
+pub fn delete_user(connect: &PgConnection, token: &str) -> Result<Users, Error> {
+    match verify_token(connect, token) {
+        Ok(user) => diesel::delete(users::table.find(user.id)).get_result(connect),
+        Err(err) => Err(err),
+    }
+}
+
 pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error> {
     let token = SaltString::generate(&mut OsRng);
     let new_token = Tokens {
@@ -60,7 +57,11 @@ pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error
         .get_result::<Tokens>(connect)
 }
 
-pub fn user_from_token(connect: &PgConnection, token: &str) -> Result<Users, Error> {
+pub fn delete_token(connect: &PgConnection, token: &str) -> Result<Tokens, Error> {
+    diesel::delete(tokens::table.find(token)).get_result(connect)
+}
+
+pub fn verify_token(connect: &PgConnection, token: &str) -> Result<Users, Error> {
     match tokens::table.find(token).get_result::<Tokens>(connect) {
         Ok(entry) => users::table.find(entry.owner).get_result(connect),
         Err(err) => Err(err),

@@ -29,16 +29,14 @@ async fn create(
     data: web::Json<UserData>,
 ) -> impl Responder {
     // TODO: refuse to add user if the request already has auth token
-    match pool.get() {
-        Ok(connection) => match create_user(&connection, &data.username, &data.password) {
-            Ok(_) => HttpResponse::Created().body(format!("created user {}", data.username)),
-            Err(_) => {
-                HttpResponse::BadRequest().body(format!("user {} already exists", data.username))
-            }
-        },
-        Err(_) => {
-            HttpResponse::InternalServerError().body("problem establishing connection to database")
+    if let Ok(connection) = pool.get() {
+        if let Ok(user) = create_user(&connection, &data.username, &data.password) {
+            HttpResponse::Created().body(format!("created user {}", user.username))
+        } else {
+            HttpResponse::BadRequest().body(format!("user {} already exists", data.username))
         }
+    } else {
+        HttpResponse::InternalServerError().body("problem establishing connection to database")
     }
 }
 
@@ -47,40 +45,37 @@ async fn login(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     data: web::Json<UserData>,
 ) -> impl Responder {
-    match pool.get() {
-        Ok(connection) => match users
+    if let Ok(connection) = pool.get() {
+        if let Ok(user) = users
             .filter(username.eq(data.username.clone()))
             .get_result::<Users>(&connection)
         {
-            Ok(user_data) => {
-                if Argon2::default()
-                    .verify_password(
-                        data.password.as_bytes(),
-                        &PasswordHash::new(&user_data.password).unwrap(),
-                    )
-                    .is_ok()
-                {
-                    match create_token(&connection, &user_data.id) {
-                        Ok(entry) => HttpResponse::Ok()
-                            .cookie(
-                                Cookie::build("login_token", entry.token)
-                                    .max_age(Duration::weeks(4))
-                                    .finish(),
-                            )
-                            .finish(),
-                        Err(_) => {
-                            HttpResponse::BadRequest().body("user was already granted auth token")
-                        }
-                    }
+            if Argon2::default()
+                .verify_password(
+                    data.password.as_bytes(),
+                    &PasswordHash::new(&user.password).unwrap(),
+                )
+                .is_ok()
+            {
+                if let Ok(entry) = create_token(&connection, &user.id) {
+                    HttpResponse::Ok()
+                        .cookie(
+                            Cookie::build("login_token", entry.token)
+                                .max_age(Duration::weeks(4))
+                                .finish(),
+                        )
+                        .finish()
                 } else {
-                    HttpResponse::BadRequest().body("invalid auth token")
+                    HttpResponse::BadRequest().body("user was already granted auth token")
                 }
+            } else {
+                HttpResponse::BadRequest().body("invalid auth token")
             }
-            Err(_) => HttpResponse::BadRequest().body("user not found"),
-        },
-        Err(_) => {
-            HttpResponse::InternalServerError().body("problem establishing connection to database")
+        } else {
+            HttpResponse::BadRequest().body("user not found")
         }
+    } else {
+        HttpResponse::InternalServerError().body("problem establishing connection to database")
     }
 }
 
@@ -89,24 +84,27 @@ async fn account(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     req: HttpRequest,
 ) -> impl Responder {
-    match pool.get() {
-        Ok(connection) => match req.headers().get(header::COOKIE) {
-            Some(cookie) => match cookie.to_str().map(|c| c.to_string()) {
-                Ok(cookie) => match cookie.split_once('=') {
+    if let Ok(connection) = pool.get() {
+        if let Some(cookie) = req.headers().get(header::COOKIE) {
+            if let Ok(cookie) = cookie.to_str().map(|c| c.to_string()) {
+                if let Some((_, value)) = cookie.split_once('=') {
                     // TODO: check that cookie name is valid
-                    Some((_, value)) => match user_from_token(&connection, value) {
-                        Ok(entry) => HttpResponse::Ok().body(format!("Hello {}!", entry.username)),
-                        Err(_) => HttpResponse::Unauthorized().finish(),
-                    },
-                    None => HttpResponse::BadRequest().body("auth token missing delimiter"),
-                },
-                Err(_) => HttpResponse::BadRequest().body("invalid auth token string"),
-            },
-            None => HttpResponse::BadRequest().body("no auth token found"),
-        },
-        Err(_) => {
-            HttpResponse::InternalServerError().body("problem establishing connection to database")
+                    if let Ok(entry) = verify_token(&connection, value) {
+                        HttpResponse::Ok().body(format!("Hello {}!", entry.username))
+                    } else {
+                        HttpResponse::Unauthorized().finish()
+                    }
+                } else {
+                    HttpResponse::BadRequest().body("auth token missing delimiter")
+                }
+            } else {
+                HttpResponse::BadRequest().body("invalid auth token string")
+            }
+        } else {
+            HttpResponse::BadRequest().body("no auth token found")
         }
+    } else {
+        HttpResponse::InternalServerError().body("problem establishing connection to database")
     }
 }
 
