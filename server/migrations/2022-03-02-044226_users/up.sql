@@ -10,5 +10,6 @@ CREATE TABLE users (
 
 CREATE TABLE tokens (
 	token         VARCHAR     NOT NULL  PRIMARY KEY,
-	owner         VARCHAR     NOT NULL  UNIQUE       REFERENCES   users(id)
+	owner         VARCHAR     NOT NULL  UNIQUE       REFERENCES   users(id),
+	created_at    TIMESTAMPTZ NOT NULL  DEFAULT NOW()
 );

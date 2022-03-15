@@ -2,6 +2,7 @@ table! {
     tokens (token) {
         token -> Varchar,
         owner -> Varchar,
+        created_at -> Timestamptz,
     }
 }
 
@@ -19,4 +20,7 @@ table! {
 
 joinable!(tokens -> users (owner));
 
-allow_tables_to_appear_in_same_query!(tokens, users,);
+allow_tables_to_appear_in_same_query!(
+    tokens,
+    users,
+);

@@ -50,6 +50,7 @@ pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error
     let new_token = Tokens {
         token: token.as_str().to_string(),
         owner: owner.to_string(),
+        created_at: Utc::now(),
     };
 
     diesel::insert_into(tokens::table)

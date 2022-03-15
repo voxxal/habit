@@ -20,4 +20,5 @@ pub struct Users {
 pub struct Tokens {
     pub token: String,
     pub owner: String,
+    pub created_at: DateTime<Utc>,
 }
