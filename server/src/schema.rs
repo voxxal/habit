@@ -1,4 +1,15 @@
 table! {
+    tiles (id) {
+        id -> Varchar,
+        owner -> Varchar,
+        name -> Varchar,
+        completion -> Nullable<Varchar>,
+        #[sql_name = "type"]
+        type_ -> Int2,
+    }
+}
+
+table! {
     tokens (token) {
         token -> Varchar,
         owner -> Varchar,
@@ -18,9 +29,7 @@ table! {
     }
 }
 
+joinable!(tiles -> users (owner));
 joinable!(tokens -> users (owner));
 
-allow_tables_to_appear_in_same_query!(
-    tokens,
-    users,
-);
+allow_tables_to_appear_in_same_query!(tiles, tokens, users,);

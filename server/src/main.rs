@@ -1,10 +1,8 @@
-use self::models::Users;
+use self::models::User;
 use self::schema::users::dsl::*;
 use actix_web::{
     cookie::{time::Duration, Cookie},
-    get,
-    http::header,
-    post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use argon2::{
     password_hash::{PasswordHash, PasswordVerifier},
@@ -23,7 +21,12 @@ pub struct UserData {
     password: String,
 }
 
-#[post("/create")]
+#[derive(Deserialize)]
+pub struct TileData {
+    name: String,
+    r#type: i16,
+}
+
 async fn create(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     data: web::Json<UserData>,
@@ -48,7 +51,7 @@ async fn login(
     if let Ok(connection) = pool.get() {
         if let Ok(user) = users
             .filter(username.eq(data.username.clone()))
-            .get_result::<Users>(&connection)
+            .get_result::<User>(&connection)
         {
             if Argon2::default()
                 .verify_password(
@@ -85,23 +88,41 @@ async fn account(
     req: HttpRequest,
 ) -> impl Responder {
     if let Ok(connection) = pool.get() {
-        if let Some(cookie) = req.headers().get(header::COOKIE) {
-            if let Ok(cookie) = cookie.to_str().map(|c| c.to_string()) {
-                if let Some((_, value)) = cookie.split_once('=') {
-                    // TODO: check that cookie name is valid
-                    if let Ok(entry) = verify_token(&connection, value) {
-                        HttpResponse::Ok().body(format!("Hello {}!", entry.username))
+        match parse_token(req) {
+            Ok((_, value)) => {
+                if let Ok(entry) = verify_token(&connection, &value) {
+                    HttpResponse::Ok().body(format!("Hello {}!", entry.username))
+                } else {
+                    HttpResponse::Unauthorized().finish()
+                }
+            }
+            Err(err) => HttpResponse::BadRequest().body(err),
+        }
+    } else {
+        HttpResponse::InternalServerError().body("problem establishing connection to database")
+    }
+}
+
+async fn tile(
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+    data: web::Json<TileData>,
+    req: HttpRequest,
+) -> impl Responder {
+    if let Ok(connection) = pool.get() {
+        match parse_token(req) {
+            Ok((_, value)) => {
+                if let Ok(user) = verify_token(&connection, &value) {
+                    if let Ok(_entry) = create_tile(&connection, &user.id, &data.name, data.r#type)
+                    {
+                        HttpResponse::Ok().finish()
                     } else {
-                        HttpResponse::Unauthorized().finish()
+                        HttpResponse::InternalServerError().body("failed to create tile")
                     }
                 } else {
-                    HttpResponse::BadRequest().body("auth token missing delimiter")
+                    HttpResponse::Unauthorized().finish()
                 }
-            } else {
-                HttpResponse::BadRequest().body("invalid auth token string")
             }
-        } else {
-            HttpResponse::BadRequest().body("no auth token found")
+            Err(err) => HttpResponse::BadRequest().body(err),
         }
     } else {
         HttpResponse::InternalServerError().body("problem establishing connection to database")
@@ -118,7 +139,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .service(account)
-            .service(create)
+            .service(
+                web::scope("/create")
+                    .route("/account", web::post().to(create))
+                    .route("/tile", web::post().to(tile)),
+            )
             .service(login)
     })
     .bind(("127.0.0.1", 8080))?

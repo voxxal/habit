@@ -5,17 +5,18 @@ extern crate dotenv;
 pub mod models;
 pub mod schema;
 
+use actix_web::{http::header, HttpRequest};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
 use chrono::prelude::*;
 use diesel::{pg::PgConnection, prelude::*, result::Error};
-use models::{Tokens, Users};
+use models::*;
 use nanoid::nanoid;
-use schema::{tokens, users};
+use schema::*;
 
-pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Result<Users, Error> {
+pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Result<User, Error> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let hash = argon2
@@ -23,7 +24,7 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
         .unwrap()
         .to_string();
 
-    let new_user = Users {
+    let new_user = User {
         id: nanoid!(),
         created_at: Utc::now(),
         username: username.to_string(),
@@ -38,33 +39,68 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
         .get_result(connect)
 }
 
-pub fn delete_user(connect: &PgConnection, token: &str) -> Result<Users, Error> {
+pub fn delete_user(connect: &PgConnection, token: &str) -> Result<User, Error> {
     match verify_token(connect, token) {
         Ok(user) => diesel::delete(users::table.find(user.id)).get_result(connect),
         Err(err) => Err(err),
     }
 }
 
-pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Tokens, Error> {
-    let token = SaltString::generate(&mut OsRng);
-    let new_token = Tokens {
-        token: token.as_str().to_string(),
+pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Token, Error> {
+    let token = SaltString::generate(&mut OsRng).as_str().to_string();
+    let new_token = Token {
+        token,
         owner: owner.to_string(),
         created_at: Utc::now(),
     };
 
     diesel::insert_into(tokens::table)
         .values(&new_token)
-        .get_result::<Tokens>(connect)
+        .get_result::<Token>(connect)
 }
 
-pub fn delete_token(connect: &PgConnection, token: &str) -> Result<Tokens, Error> {
+pub fn delete_token(connect: &PgConnection, token: &str) -> Result<Token, Error> {
     diesel::delete(tokens::table.find(token)).get_result(connect)
 }
 
-pub fn verify_token(connect: &PgConnection, token: &str) -> Result<Users, Error> {
-    match tokens::table.find(token).get_result::<Tokens>(connect) {
+pub fn parse_token(req: HttpRequest) -> Result<(String, String), &'static str> {
+    if let Some(cookie) = req.headers().get(header::COOKIE) {
+        if let Ok(cookie) = cookie.to_str() {
+            if let Some(cookie) = cookie.split_once('=') {
+                Ok((cookie.0.to_string(), cookie.1.to_string()))
+            } else {
+                Err("auth token missing delimiter")
+            }
+        } else {
+            Err("invalid auth token string")
+        }
+    } else {
+        Err("no auth token found")
+    }
+}
+
+pub fn verify_token(connect: &PgConnection, token: &str) -> Result<User, Error> {
+    match tokens::table.find(token).get_result::<Token>(connect) {
         Ok(entry) => users::table.find(entry.owner).get_result(connect),
         Err(err) => Err(err),
     }
+}
+
+pub fn create_tile(
+    connect: &PgConnection,
+    owner: &str,
+    name: &str,
+    type_: i16,
+) -> Result<Tile, Error> {
+    let id = SaltString::generate(&mut OsRng);
+    let tile = NewTile {
+        id: id.as_str(),
+        owner,
+        name,
+        type_,
+    };
+
+    diesel::insert_into(tiles::table)
+        .values(&tile)
+        .get_result::<Tile>(connect)
 }
