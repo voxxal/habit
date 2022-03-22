@@ -51,7 +51,6 @@ function Streak({
             {data.streak}
           </span>
         </h4>
-        {/* TODO extract into reducer */}
         <CompleteButton
           data={data}
           complete={(e: React.MouseEvent<HTMLButtonElement>) => {

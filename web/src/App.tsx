@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import localForage from "localforage";
 import React, { useEffect, useState, useReducer } from "react";
 import HomePage from "./pages/Home";
 import TilePage from "./pages/Tile";
@@ -12,20 +13,29 @@ import {
 } from "./state";
 import { Route, Routes } from "react-router-dom";
 
+localForage.config({
+  name: "habits"
+});
+
 function App() {
   const [state, dispatch] = useReducer(stateReducer, initalState);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const data = localStorage.getItem("habitsSave");
-    if (!data) {
-      console.log("Can't fetch data from localStorage");
-      return;
+    const fetchDataFromLocalStorage = async () => { //TODO extract into another function
+      const data = await localForage.getItem<string>("habitsSave");
+      if (!data) {
+        console.log("Can't fetch data from localStorage");
+        return;
+      }
+      if (JSON.parse(data)) {
+        dispatch({ type: ActionType.FetchData, payload: JSON.parse(data) });
+        setLoading(false);
+	return;
+      }
+      console.log("Failed to parse data");
     }
 
-    if (JSON.parse(data)) {
-      dispatch({ type: ActionType.FetchData, payload: JSON.parse(data) });
-      return;
-    }
-    console.log("Failed to parse data");
+    fetchDataFromLocalStorage();
   }, []);
 
   useEffect(() => {
@@ -36,18 +46,21 @@ function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem("habitsSave", JSON.stringify(state));
+    localForage.setItem("habitsSave", JSON.stringify(state));
   }, [state]);
 
   return (
     <StateContext.Provider value={{ state, dispatch }}>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route
-          path="/tile/:tileId"
-          element={<TilePage />}
-        />
-      </Routes>
+    { loading ? 
+        <div className="flex items-center justify-center h-screen text-2xl">Loading...</div> : 
+	<Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/tile/:tileId"
+            element={<TilePage />}
+          />
+        </Routes> 
+    }
     </StateContext.Provider>
   );
 }

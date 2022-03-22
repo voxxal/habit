@@ -11,7 +11,7 @@ interface TileData {
   startTime: Dayjs;
   lastCheck: Dayjs;
 }
-
+// TODO make this a "Data" interface and include is loading/error
 interface State {
   userId: string;
   experience: number;
