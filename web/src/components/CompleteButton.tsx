@@ -27,7 +27,7 @@ function CompleteButton({
         </button>
       ) : (
         <button
-          className="mt-auto h-10 w-full rounded-full bg-green-500 font-semibold text-white transition-all hover:scale-110 hover:bg-green-600"
+          className="mt-auto h-10 w-full rounded-full bg-green-500 font-semibold text-white transition-all hover:bg-green-600"
           onClick={complete}
         >
           Complete
