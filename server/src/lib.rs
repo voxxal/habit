@@ -127,3 +127,7 @@ pub fn create_tile(
         .values(&tile)
         .get_result::<Tile>(connect)
 }
+
+pub fn get_tile(connect: &PgConnection, id: &str) -> Result<Tile, Error> {
+    tiles::table.find(id).get_result(connect)
+}
