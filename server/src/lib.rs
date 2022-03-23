@@ -10,7 +10,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
-use chrono::prelude::*;
+use chrono::{prelude::*, Duration};
 use diesel::{pg::PgConnection, prelude::*, result::Error};
 use models::*;
 use nanoid::nanoid;
@@ -40,10 +40,14 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
 }
 
 pub fn delete_user(connect: &PgConnection, token: &str) -> Result<User, Error> {
-    match verify_token(connect, token) {
-        Ok(user) => diesel::delete(users::table.find(user.id)).get_result(connect),
-        Err(err) => Err(err),
-    }
+    let user = verify_token(connect, token)?;
+    diesel::delete(users::table.find(user.id)).get_result(connect)
+}
+
+pub fn get_user(connect: &PgConnection, user: &str) -> Result<User, Error> {
+    users::table
+        .filter(schema::users::dsl::username.eq(user))
+        .get_result::<User>(connect)
 }
 
 pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Token, Error> {
@@ -80,9 +84,12 @@ pub fn parse_token(req: HttpRequest) -> Result<(String, String), &'static str> {
 }
 
 pub fn verify_token(connect: &PgConnection, token: &str) -> Result<User, Error> {
-    match tokens::table.find(token).get_result::<Token>(connect) {
-        Ok(entry) => users::table.find(entry.owner).get_result(connect),
-        Err(err) => Err(err),
+    let entry = tokens::table.find(token).get_result::<Token>(connect)?;
+    // checks that token is still within valid timeframe
+    if entry.created_at + Duration::weeks(4) < Utc::now() {
+        users::table.find(entry.owner).get_result(connect)
+    } else {
+        Err(Error::NotFound)
     }
 }
 
@@ -90,14 +97,14 @@ pub fn create_tile(
     connect: &PgConnection,
     owner: &str,
     name: &str,
-    type_: i16,
+    r#type: i16,
 ) -> Result<Tile, Error> {
     let id = SaltString::generate(&mut OsRng);
     let tile = NewTile {
         id: id.as_str(),
         owner,
         name,
-        type_,
+        type_: r#type,
     };
 
     diesel::insert_into(tiles::table)
