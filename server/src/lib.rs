@@ -7,7 +7,7 @@ pub mod schema;
 
 use actix_web::{http::header, HttpRequest};
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 use chrono::{prelude::*, Duration};
@@ -15,6 +15,22 @@ use diesel::{pg::PgConnection, prelude::*, result::Error};
 use models::*;
 use nanoid::nanoid;
 use schema::*;
+
+pub fn authorize(connect: &PgConnection, username: &str, password: &str) -> Result<String, Error> {
+    let user = get_user(connect, username)?;
+    if Argon2::default()
+        .verify_password(password.as_bytes(), &PasswordHash::new(password).unwrap())
+        .is_ok()
+    {
+        if let Ok(entry) = create_token(connect, &user.id) {
+            Ok(entry.token)
+        } else {
+            Err(Error::NotFound)
+        }
+    } else {
+        Err(Error::NotFound)
+    }
+}
 
 pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Result<User, Error> {
     let salt = SaltString::generate(&mut OsRng);

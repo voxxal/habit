@@ -2,16 +2,14 @@ use actix_web::{
     cookie::{time::Duration, Cookie},
     get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-use argon2::{
-    password_hash::{PasswordHash, PasswordVerifier},
-    Argon2,
-};
 use diesel::{
     prelude::*,
     r2d2::{ConnectionManager, Pool},
 };
+use dotenv::dotenv;
 use serde::Deserialize;
 use server::*;
+use std::env;
 
 #[derive(Deserialize)]
 pub struct UserData {
@@ -25,7 +23,8 @@ pub struct TileData {
     r#type: i16,
 }
 
-async fn create(
+#[post("/register")]
+async fn register(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     data: web::Json<UserData>,
 ) -> impl Responder {
@@ -37,9 +36,18 @@ async fn create(
         }
     };
 
-    // TODO: refuse to add user if the request already has auth token
     if let Ok(user) = create_user(&connection, &data.username, &data.password) {
-        HttpResponse::Created().body(format!("created user {}", user.username))
+        if let Ok(token) = authorize(&connection, &user.username, &user.password) {
+            HttpResponse::Created()
+                .cookie(
+                    Cookie::build("login_token", token)
+                        .max_age(Duration::weeks(4))
+                        .finish(),
+                )
+                .finish()
+        } else {
+            HttpResponse::InternalServerError().finish()
+        }
     } else {
         HttpResponse::BadRequest().body(format!("user {} already exists", data.username))
     }
@@ -58,30 +66,16 @@ async fn login(
         }
     };
 
-    if let Ok(user) = get_user(&connection, &data.username) {
-        if Argon2::default()
-            .verify_password(
-                data.password.as_bytes(),
-                &PasswordHash::new(&user.password).unwrap(),
+    if let Ok(token) = authorize(&connection, &data.username, &data.password) {
+        HttpResponse::Created()
+            .cookie(
+                Cookie::build("login_token", token)
+                    .max_age(Duration::weeks(4))
+                    .finish(),
             )
-            .is_ok()
-        {
-            if let Ok(entry) = create_token(&connection, &user.id) {
-                HttpResponse::Ok()
-                    .cookie(
-                        Cookie::build("login_token", entry.token)
-                            .max_age(Duration::weeks(4))
-                            .finish(),
-                    )
-                    .finish()
-            } else {
-                HttpResponse::BadRequest().body("user was already granted auth token")
-            }
-        } else {
-            HttpResponse::BadRequest().body("invalid auth token")
-        }
+            .finish()
     } else {
-        HttpResponse::BadRequest().body("user not found")
+        HttpResponse::Unauthorized().finish()
     }
 }
 
@@ -141,20 +135,18 @@ async fn tile(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let manager: ConnectionManager<PgConnection> =
-        ConnectionManager::new("postgres://ninefox:postgres@localhost/37xtest");
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let manager: ConnectionManager<PgConnection> = ConnectionManager::new(&database_url);
     let pool = Pool::builder().max_size(10).build(manager).unwrap();
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .service(account)
-            .service(
-                web::scope("/create")
-                    .route("/account", web::post().to(create))
-                    .route("/tile", web::post().to(tile)),
-            )
+            .service(register)
             .service(login)
+            .service(web::scope("/create").route("/tile", web::post().to(tile)))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
