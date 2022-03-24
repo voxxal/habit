@@ -246,12 +246,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.56"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
-
-[[package]]
 name = "argon2"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1126,7 +1120,6 @@ version = "0.1.0"
 dependencies = [
  "actix-files",
  "actix-web",
- "anyhow",
  "argon2",
  "chrono",
  "diesel",

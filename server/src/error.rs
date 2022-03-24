@@ -1,3 +1,4 @@
+use actix_web::HttpResponse;
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
@@ -12,12 +13,14 @@ pub enum Error {
     TokenDeletionFailure,
     #[error("Failed to fetch token")]
     TokenFetchFailure,
-    #[error("Token expired")]
-    TokenExpired,
+    #[error("Token invalid")]
+    TokenInvalid, // TODO do we split this into all the diffrent ways it could be invalid?
 
     // User
     #[error("Failed to create user")]
     UserCreationFailure,
+    #[error("Username {0} already exists")]
+    UsernameConflict(String),
     #[error("Failed to delete user")]
     UserDeletionFailure,
     #[error("Failed to fetch user")]
@@ -31,3 +34,31 @@ pub enum Error {
     #[error("Failed to fetch tile")]
     TileFetchFailure,
 }
+
+impl Error {
+    fn to_response(self) -> HttpResponse {
+        macro_rules! to_res {
+            ($(($err:ident, $res:ident)),*) => {{
+                match self {
+                    $( Self::$err => HttpResponse::$res().body(format!("{}", Self::$err)), )*
+                    _ => unimplemented!()
+                }
+            }}
+        }
+
+        //TODO basically have one error for db error and have some for fetches etc
+        to_res!(
+            (LoginIncorrect, Unauthorized),
+            (TokenCreationFailure, InternalServerError),
+            (TokenDeletionFailure, InternalServerError),
+            (TokenFetchFailure, InternalServerError),
+            (TokenInvalid, Unauthorized),
+            (UserCreationFailure, InternalServerError),
+
+            (UserDeletionFailure, InternalServerError),
+            (UserFetchFailure, InternalServerError)
+        )
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;

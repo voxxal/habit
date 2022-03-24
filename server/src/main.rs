@@ -40,7 +40,7 @@ async fn register(
         if let Ok(token) = authorize(&connection, &user.username, &user.password) {
             HttpResponse::Created()
                 .cookie(
-                    Cookie::build("login_token", token)
+                    Cookie::build("token", token)
                         .max_age(Duration::weeks(4))
                         .finish(),
                 )
@@ -69,7 +69,7 @@ async fn login(
     if let Ok(token) = authorize(&connection, &data.username, &data.password) {
         HttpResponse::Created()
             .cookie(
-                Cookie::build("login_token", token)
+                Cookie::build("token", token)
                     .max_age(Duration::weeks(4))
                     .finish(),
             )
