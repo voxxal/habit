@@ -21,7 +21,7 @@ use schema::*;
 
 //TODO STOP PUTTING MATCH STATEMENTS EVERYWHERE THERE IS A BETTER WAY
 pub fn authorize(connect: &PgConnection, username: &str, password: &str) -> Result<String> {
-    let user = get_user(connect, username)?;
+    let user = get_user_by_username(connect, username)?;
     if Argon2::default()
         .verify_password(password.as_bytes(), &PasswordHash::new(password).unwrap())
         .is_ok()
@@ -50,33 +50,25 @@ pub fn create_user(connect: &PgConnection, username: &str, password: &str) -> Re
         level: 1,
     };
 
-    match diesel::insert_into(users::table)
+    diesel::insert_into(users::table)
         .values(&new_user)
         .get_result(connect)
-    {
-        Ok(user) => Ok(user),
-        Err(_) => Err(Error::UserCreationFailure)?,
-    }
+        .map_err(|_| anyhow::Error::new(Error::UserCreationFailure))
 }
 
 pub fn delete_user(connect: &PgConnection, token: &str) -> Result<User> {
     // note: why does this need to return a user?
     let user = verify_token(connect, token)?;
-    match diesel::delete(users::table.find(user.id)).get_result(connect) {
-        Ok(user) => Ok(user),
-        Err(_) => Err(Error::UserDeletionFailure)?,
-    }
+    diesel::delete(users::table.find(user.id))
+        .get_result(connect)
+        .map_err(|_| anyhow::Error::new(Error::UserDeletionFailure))
 }
 
-pub fn get_user(connect: &PgConnection, user: &str) -> Result<User> {
-    // make get_user_by_username
-    match users::table
-        .filter(schema::users::dsl::username.eq(user))
+pub fn get_user_by_username(connect: &PgConnection, username: &str) -> Result<User> {
+    users::table
+        .filter(schema::users::dsl::username.eq(username))
         .get_result::<User>(connect)
-    {
-        Ok(user) => Ok(user),
-        Err(_) => Err(Error::UserFetchFailure)?,
-    }
+        .map_err(|_| anyhow::Error::new(Error::UserFetchFailure))
 }
 
 pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Token> {
@@ -87,20 +79,16 @@ pub fn create_token(connect: &PgConnection, owner: &str) -> Result<Token> {
         created_at: Utc::now(),
     };
 
-    match diesel::insert_into(tokens::table)
+    diesel::insert_into(tokens::table)
         .values(&new_token)
         .get_result::<Token>(connect)
-    {
-        Ok(token) => Ok(token),
-        Err(_) => Err(Error::TokenCreationFailure)?,
-    }
+        .map_err(|_| anyhow::Error::new(Error::TokenCreationFailure))
 }
 
 pub fn delete_token(connect: &PgConnection, token: &str) -> Result<Token> {
-    match diesel::delete(tokens::table.find(token)).get_result(connect) {
-        Ok(token) => Ok(token),
-        Err(_) => Err(Error::TokenDeletionFailure)?,
-    }
+    diesel::delete(tokens::table.find(token))
+        .get_result(connect)
+        .map_err(|_| anyhow::Error::new(Error::TokenDeletionFailure))
 }
 
 //TODO probably a cookie lib to do this for us. not going to port this rn
@@ -140,18 +128,15 @@ pub fn create_tile(connect: &PgConnection, owner: &str, name: &str, r#type: i16)
         type_: r#type,
     };
 
-    match diesel::insert_into(tiles::table)
+    diesel::insert_into(tiles::table)
         .values(&tile)
         .get_result::<Tile>(connect)
-    {
-        Ok(tile) => Ok(tile),
-        Err(_) => Err(Error::TileCreationFailure)?,
-    }
+        .map_err(|_| anyhow::Error::new(Error::TileCreationFailure))
 }
 
 pub fn get_tile(connect: &PgConnection, id: &str) -> Result<Tile> {
-    match tiles::table.find(id).get_result(connect) {
-        Ok(tile) => Ok(tile),
-        Err(_) => Err(Error::TileFetchFailure)?,
-    }
+    tiles::table
+        .find(id)
+        .get_result(connect)
+        .map_err(|_| anyhow::Error::new(Error::TileFetchFailure))
 }
