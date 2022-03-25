@@ -23,7 +23,7 @@ function TilePage() {
         placeholder="Unnamed"
         rows={1}
         className="resize-none overflow-y-hidden bg-transparent text-4xl font-bold"
-        maxLength={48}
+        maxLength={127}
         value={data.name}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
           dispatch({
