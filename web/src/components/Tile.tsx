@@ -14,7 +14,7 @@ function Streak({
 }) {
   let title: HTMLParagraphElement | null; 
 
-  useEffect(() => {
+  useEffect(() => { //TODO not resizeing
     if (title) {
       title.style.height = "auto";
       title.style.height = title.scrollHeight + "px";

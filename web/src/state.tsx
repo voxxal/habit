@@ -110,19 +110,20 @@ const stateReducer = (state: State, action: Action) => {
       };
     }
     case ActionType.CompleteTile: {
-      const newData = state.tiles.find((tile) => tile.id === action.payload.id);
-      if (!newData) return state;
+      const newState = {...state};
+      const newData = newState.tiles.find((tile) => tile.id === action.payload.id);
+      if (!newData) return newState;
       newData.streak += 1;
       newData.lastCheck = dayjs();
-      const exp = state.experience + 1000 * (2 / newData.streak);
+      const exp = newState.experience + 1000 * (2 / newData.streak);
       let levelUp = 0;
-      while (exp >= nextLevelTotalExp(state.level + levelUp)) levelUp++;
+      while (exp >= nextLevelTotalExp(newState.level + levelUp)) levelUp++;
 
       return {
-        ...state,
-        level: state.level + levelUp,
+        ...newState,
+        level: newState.level + levelUp,
         experience: Math.floor(exp),
-        tiles: state.tiles,
+        tiles: newState.tiles,
       };
     }
     default:
