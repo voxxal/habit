@@ -3,7 +3,7 @@ table! {
         id -> Varchar,
         owner -> Varchar,
         name -> Varchar,
-        completion -> Nullable<Varchar>,
+        completion -> Nullable<Bytea>,
         #[sql_name = "type"]
         type_ -> Int2,
     }

@@ -18,6 +18,6 @@ CREATE TABLE tiles (
 	id            VARCHAR NOT NULL PRIMARY KEY,
 	owner         VARCHAR NOT NULL REFERENCES users(id),
 	name          VARCHAR NOT NULL,
-	completion    VARCHAR,
+	completion    BYTEA,
 	type          SMALLINT NOT NULL
 )

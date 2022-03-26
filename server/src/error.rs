@@ -3,6 +3,11 @@ use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
+    #[error("Internal server error")]
+    ServerError,
+    #[error("Database error")]
+    DatabaseError,
+
     #[error("Username or password is incorrect")]
     LoginIncorrect,
 
@@ -54,7 +59,6 @@ impl Error {
             (TokenFetchFailure, InternalServerError),
             (TokenInvalid, Unauthorized),
             (UserCreationFailure, InternalServerError),
-
             (UserDeletionFailure, InternalServerError),
             (UserFetchFailure, InternalServerError)
         )

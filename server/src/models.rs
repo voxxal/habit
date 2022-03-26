@@ -23,12 +23,12 @@ pub struct Token {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable)]
 pub struct Tile {
     pub id: String,
     pub owner: String,
     pub name: String,
-    pub completion: Option<String>,
+    pub completion: Option<Vec<u8>>,
     pub r#type: i16,
 }
 
