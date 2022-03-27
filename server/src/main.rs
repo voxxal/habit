@@ -1,3 +1,4 @@
+#![feature(result_flattening)]
 use actix_web::{
     cookie::{time::Duration, Cookie},
     get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
@@ -36,20 +37,18 @@ async fn register(
         }
     };
 
-    if let Ok(user) = create_user(&connection, &data.username, &data.password) {
-        if let Ok(token) = authorize(&connection, &user.username, &user.password) {
-            HttpResponse::Created()
-                .cookie(
-                    Cookie::build("token", token)
-                        .max_age(Duration::weeks(4))
-                        .finish(),
-                )
-                .finish()
-        } else {
-            HttpResponse::InternalServerError().finish()
-        }
-    } else {
-        HttpResponse::BadRequest().body(format!("user {} already exists", data.username))
+    match create_user(&connection, &data.username, &data.password)
+        .map(|user| authorize(&connection, &user.username, &user.password))
+        .flatten()
+    {
+        Ok(token) => HttpResponse::Created()
+            .cookie(
+                Cookie::build("token", token)
+                    .max_age(Duration::weeks(4))
+                    .finish(),
+            )
+            .finish(),
+        Err(kind) => kind.to_response(),
     }
 }
 
@@ -92,15 +91,12 @@ async fn account(
         }
     };
 
-    match parse_token(req) {
-        Ok((_, value)) => {
-            if let Ok(entry) = verify_token(&connection, &value) {
-                HttpResponse::Ok().body(format!("Hello {}!", entry.username))
-            } else {
-                HttpResponse::Unauthorized().finish()
-            }
-        }
-        Err(err) => HttpResponse::BadRequest().body(err),
+    match parse_token(req)
+        .map(|(_, value)| verify_token(&connection, &value))
+        .flatten()
+    {
+        Ok(entry) => HttpResponse::Ok().body(format!("Hello {}!", entry.username)),
+        Err(kind) => kind.to_response(),
     }
 }
 
@@ -117,19 +113,15 @@ async fn tile(
         }
     };
 
-    match parse_token(req) {
-        Ok((_, value)) => {
-            if let Ok(user) = verify_token(&connection, &value) {
-                if create_tile(&connection, &user.id, &data.name, data.r#type).is_ok() {
-                    HttpResponse::Ok().finish()
-                } else {
-                    HttpResponse::InternalServerError().body("failed to create tile")
-                }
-            } else {
-                HttpResponse::Unauthorized().finish()
-            }
-        }
-        Err(err) => HttpResponse::BadRequest().body(err),
+    match parse_token(req)
+        .map(|(_, value)| {
+            verify_token(&connection, &value)
+                .map(|user| create_tile(&connection, &user.id, &data.name, data.r#type))
+        })
+        .flatten()
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(err) => err.to_response(),
     }
 }
 

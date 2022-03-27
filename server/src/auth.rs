@@ -46,19 +46,19 @@ pub fn delete_token(connect: &PgConnection, token: &str) -> Result<Token> {
 
 //TODO probably a cookie lib to do this for us. not going to port this rn
 
-pub fn parse_token(req: HttpRequest) -> std::result::Result<(String, String), &'static str> {
+pub fn parse_token(req: HttpRequest) -> Result<(String, String)> {
     if let Some(cookie) = req.headers().get(header::COOKIE) {
         if let Ok(cookie) = cookie.to_str() {
             if let Some(cookie) = cookie.split_once('=') {
                 Ok((cookie.0.to_string(), cookie.1.to_string()))
             } else {
-                Err("auth token missing delimiter")
+                Err(Error::TokenInvalid)
             }
         } else {
-            Err("invalid auth token string")
+            Err(Error::TokenInvalid)
         }
     } else {
-        Err("no auth token found")
+        Err(Error::TokenInvalid)
     }
 }
 

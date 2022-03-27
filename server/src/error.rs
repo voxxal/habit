@@ -41,7 +41,7 @@ pub enum Error {
 }
 
 impl Error {
-    fn to_response(self) -> HttpResponse {
+    pub fn to_response(self) -> HttpResponse {
         macro_rules! to_res {
             ($(($err:ident, $res:ident)),*) => {{
                 match self {
