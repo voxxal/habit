@@ -1,7 +1,12 @@
 import dayjs from "dayjs";
 import CompleteButton from "./CompleteButton";
 import { nextLevelTotalExp } from "../util";
-import React, { ChangeEvent, FormEvent, MouseEventHandler, useEffect } from "react";
+import React, {
+  ChangeEvent,
+  FormEvent,
+  MouseEventHandler,
+  useEffect,
+} from "react";
 import { Action, ActionType, TileData } from "../state";
 import { Link } from "react-router-dom";
 
@@ -12,9 +17,10 @@ function Streak({
   data: TileData;
   dispatch: React.Dispatch<Action>;
 }) {
-  let title: HTMLParagraphElement | null; 
+  let title: HTMLParagraphElement | null;
 
-  useEffect(() => { //TODO not resizeing
+  useEffect(() => {
+    //TODO not resizeing
     if (title) {
       title.style.height = "auto";
       title.style.height = title.scrollHeight + "px";
@@ -54,7 +60,6 @@ function Streak({
         <CompleteButton
           data={data}
           complete={(e: React.MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
             e.preventDefault();
             dispatch({ type: ActionType.CompleteTile, payload: data });
           }}
