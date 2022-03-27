@@ -59,7 +59,7 @@ const initalState: State = {
   level: 1,
   tiles: [],
 };
-
+// TODO stop making shallow copies
 const stateReducer = (state: State, action: Action) => {
   switch (action.type) {
     case ActionType.FetchData: {
@@ -110,15 +110,18 @@ const stateReducer = (state: State, action: Action) => {
       };
     }
     case ActionType.CompleteTile: {
-      const newState = {...state};
-      const newData = newState.tiles.find((tile) => tile.id === action.payload.id);
+      //TODO very round about just map it into a new tile array
+      const newState = structuredClone(state) as State;
+      const newData = newState.tiles.find(
+        (tile) => tile.id === action.payload.id
+      );
       if (!newData) return newState;
       newData.streak += 1;
       newData.lastCheck = dayjs();
       const exp = newState.experience + 1000 * (2 / newData.streak);
       let levelUp = 0;
       while (exp >= nextLevelTotalExp(newState.level + levelUp)) levelUp++;
-
+      debugger;
       return {
         ...newState,
         level: newState.level + levelUp,

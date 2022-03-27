@@ -2,6 +2,7 @@ import React, { useContext, useEffect } from "react";
 import { ActionType, State, StateContext, TileData } from "../state";
 import { useParams } from "react-router-dom";
 import CompleteButton from "../components/CompleteButton";
+import Navbar from "../components/Navbar";
 
 function TilePage() {
   const { state, dispatch } = useContext(StateContext);
@@ -18,27 +19,30 @@ function TilePage() {
   }, [data.name]);
   //TODO back button
   return (
-    <div className="m-4 flex flex-col flex-betwe">
-      <textarea
-        placeholder="Unnamed"
-        rows={1}
-        className="resize-none overflow-y-hidden bg-transparent text-4xl font-bold"
-        maxLength={127}
-        value={data.name}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-          dispatch({
-            type: ActionType.RenameTile,
-            payload: { data, rename: e.target.value },
-          });
-        }}
-        ref={(el) => (textarea = el)}
-      ></textarea>
-      <CompleteButton
-        data={data}
-        complete={(e: React.MouseEvent<HTMLButtonElement>) => {
-          dispatch({ type: ActionType.CompleteTile, payload: data });
-        }}
-      />
+    <div>
+      <Navbar title={data.name === "" ? "Unnamed" : data.name} back />
+      <div className="flex-between m-4 flex flex-col">
+        <textarea
+          placeholder="Unnamed"
+          rows={1}
+          className="resize-none overflow-y-hidden bg-transparent text-4xl font-bold"
+          maxLength={127}
+          value={data.name}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            dispatch({
+              type: ActionType.RenameTile,
+              payload: { data, rename: e.target.value },
+            });
+          }}
+          ref={(el) => (textarea = el)}
+        ></textarea>
+        <CompleteButton
+          data={data}
+          complete={(e: React.MouseEvent<HTMLButtonElement>) => {
+            dispatch({ type: ActionType.CompleteTile, payload: data });
+          }}
+        />
+      </div>
     </div>
   );
 }

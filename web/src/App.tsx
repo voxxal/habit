@@ -14,14 +14,15 @@ import {
 import { Route, Routes } from "react-router-dom";
 
 localForage.config({
-  name: "habits"
+  name: "habit",
 });
 
 function App() {
   const [state, dispatch] = useReducer(stateReducer, initalState);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const fetchDataFromLocalStorage = async () => { //TODO extract into another function
+    const fetchDataFromLocalStorage = async () => {
+      //TODO extract into another function
       const data = await localForage.getItem<string>("habitsSave");
       if (!data) {
         console.log("Can't fetch data from localStorage");
@@ -30,10 +31,10 @@ function App() {
       if (JSON.parse(data)) {
         dispatch({ type: ActionType.FetchData, payload: JSON.parse(data) });
         setLoading(false);
-	return;
+        return;
       }
       console.log("Failed to parse data");
-    }
+    };
 
     fetchDataFromLocalStorage();
   }, []);
@@ -49,18 +50,19 @@ function App() {
     localForage.setItem("habitsSave", JSON.stringify(state));
   }, [state]);
 
+  // loading screen forever when first load
   return (
     <StateContext.Provider value={{ state, dispatch }}>
-    { loading ? 
-        <div className="flex items-center justify-center h-screen text-2xl">Loading...</div> : 
-	<Routes>
+      {loading ? (
+        <div className="flex h-screen items-center justify-center text-2xl">
+          Loading...
+        </div>
+      ) : (
+        <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route
-            path="/tile/:tileId"
-            element={<TilePage />}
-          />
-        </Routes> 
-    }
+          <Route path="/tile/:tileId" element={<TilePage />} />
+        </Routes>
+      )}
     </StateContext.Provider>
   );
 }

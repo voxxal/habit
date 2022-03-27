@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import Navbar from "../components/Navbar";
 import Tile from "../components/Tile";
 import { ActionType, State, StateContext } from "../state";
 import { nanoid } from "nanoid";
@@ -9,6 +10,7 @@ function HomePage() {
   const { state, dispatch } = useContext(StateContext);
   return (
     <div className="flex flex-col">
+      <Navbar title="Home" back={false} />
       {/* <div
       className=" fixed h-1 bg-purple-500 transition-all duration-700"
       style={{ width: `${(state.experience / (2 ** (state.level / 10) + 100)) * 100}%` }}
@@ -30,7 +32,7 @@ function HomePage() {
         {nextLevelExp(state.level)}
       </div>
       <div className="flex flex-row flex-wrap">
-        {state.tiles.map((tile, i) => (
+        {state.tiles.map((tile) => (
           <Tile key={tile.id} data={tile} dispatch={dispatch} />
         ))}
 
