@@ -54,7 +54,7 @@ function Streak({
         <h4 className="my-1">
           Streak:
           <span className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 p-1 font-semibold text-slate-100">
-            {data.streak}
+            {data.streak.streak}
           </span>
         </h4>
         <CompleteButton

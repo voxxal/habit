@@ -6,13 +6,14 @@ use super::{
 use diesel::{pg::PgConnection, prelude::*};
 use nanoid::nanoid;
 
-pub fn create_tile(connect: &PgConnection, owner: &str, name: &str, r#type: i16) -> Result<Tile> {
+pub fn create_tile(connect: &PgConnection, owner: &str, name: &str) -> Result<Tile> {
     let id = nanoid!();
     let tile = NewTile {
         id: id.as_str(),
         owner: owner,
         name: name,
-        type_: r#type,
+        // TODO: handle tile types
+        type_: 0,
     };
 
     diesel::insert_into(tiles::table)

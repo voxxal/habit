@@ -12,6 +12,7 @@ import {
   ActionType,
 } from "./state";
 import { Route, Routes } from "react-router-dom";
+import { sync } from "./api";
 
 localForage.config({
   name: "habit",
@@ -42,6 +43,7 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       dispatch({ type: ActionType.UpdateStreaks });
+      sync(state);
     }, 1000 * 60 * 5);
     return () => clearInterval(interval);
   });

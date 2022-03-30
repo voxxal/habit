@@ -13,15 +13,31 @@ use server::*;
 use std::env;
 
 #[derive(Deserialize)]
-pub struct UserData {
+struct UserData {
     username: String,
     password: String,
 }
 
-#[derive(Deserialize)]
-pub struct TileData {
+#[derive(Deserialize, Debug)]
+struct TileData {
+    id: String,
     name: String,
-    r#type: i16,
+    streak: Vec<u8>,
+    start_time: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct State {
+    id: String,
+    experience: f64,
+    level: i16,
+    tiles: Vec<TileData>,
+}
+
+#[post("/sync")]
+async fn sync(data: web::Json<State>) -> impl Responder {
+    println!("{:?}", data);
+    HttpResponse::Ok().body("{\"hey\":\"0\"}")
 }
 
 #[post("/register")]
@@ -116,7 +132,7 @@ async fn tile(
     match parse_token(req)
         .map(|(_, value)| {
             verify_token(&connection, &value)
-                .map(|user| create_tile(&connection, &user.id, &data.name, data.r#type))
+                .map(|user| create_tile(&connection, &user.id, &data.name))
         })
         .flatten()
     {
@@ -138,6 +154,7 @@ async fn main() -> std::io::Result<()> {
             .service(account)
             .service(register)
             .service(login)
+            .service(sync)
             .service(web::scope("/create").route("/tile", web::post().to(tile)))
     })
     .bind(("127.0.0.1", 8080))?

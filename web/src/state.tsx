@@ -2,14 +2,18 @@ import React, { useReducer, createContext } from "react";
 import { nanoid } from "nanoid";
 import dayjs, { Dayjs } from "dayjs";
 import { nextLevelTotalExp } from "./util";
+import { BitSet } from "./bitset";
+
+/*
+TODO: add function signatures
+*/
 
 interface TileData {
   // TODO discription
   id: string;
   name: string;
-  streak: number;
+  streak: BitSet;
   startTime: Dayjs;
-  lastCheck: Dayjs;
 }
 // TODO make this a "Data" interface and include is loading/error
 interface State {
@@ -60,7 +64,7 @@ const initalState: State = {
   tiles: [],
 };
 // TODO stop making shallow copies
-const stateReducer = (state: State, action: Action) => {
+const stateReducer = (state: State, action: Action): State => {
   switch (action.type) {
     case ActionType.FetchData: {
       return { ...initalState, ...action.payload };
@@ -70,9 +74,11 @@ const stateReducer = (state: State, action: Action) => {
         ...state,
         tiles: state.tiles.map((tile) => {
           const newTiles: TileData = { ...tile };
+          // TODO: remove this later
+          /*
           if (dayjs().diff(tile.lastCheck, "day") >= 2) {
             newTiles.streak = 0;
-          }
+          }*/
           return newTiles;
         }),
       };
@@ -85,9 +91,8 @@ const stateReducer = (state: State, action: Action) => {
           {
             id: nanoid(),
             name: "",
-            streak: 0,
+            streak: new BitSet(255),
             startTime: dayjs(),
-            lastCheck: dayjs().subtract(1, "day"),
           },
         ],
       };
@@ -116,9 +121,9 @@ const stateReducer = (state: State, action: Action) => {
         (tile) => tile.id === action.payload.id
       );
       if (!newData) return newState;
-      newData.streak += 1;
-      newData.lastCheck = dayjs();
-      const exp = newState.experience + 1000 * (2 / newData.streak);
+      let diff = dayjs().diff(newData.startTime);
+      newData.streak.set(diff);
+      const exp = newState.experience + 1000 * (2 / 1 /* TODO: calculate the streak from the bitset */);
       let levelUp = 0;
       while (exp >= nextLevelTotalExp(newState.level + levelUp)) levelUp++;
       debugger;
