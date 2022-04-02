@@ -20,7 +20,7 @@ function Streak({
   let title: HTMLParagraphElement | null;
 
   useEffect(() => {
-    //TODO not resizeing
+    //TODO not resizing
     if (title) {
       title.style.height = "auto";
       title.style.height = title.scrollHeight + "px";
@@ -54,7 +54,7 @@ function Streak({
         <h4 className="my-1">
           Streak:
           <span className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 p-1 font-semibold text-slate-100">
-            {data.streak.streak}
+            {data.streak.streak(data.startTime)/* TODO: prevent this from crashing*/}
           </span>
         </h4>
         <CompleteButton

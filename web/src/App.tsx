@@ -13,6 +13,8 @@ import {
 } from "./state";
 import { Route, Routes } from "react-router-dom";
 import { sync } from "./api";
+import { StreakBitSet } from "./streakbitset";
+import { nanoid } from "nanoid";
 
 localForage.config({
   name: "habit",
@@ -24,13 +26,14 @@ function App() {
   useEffect(() => {
     const fetchDataFromLocalStorage = async () => {
       //TODO extract into another function
-      const data = await localForage.getItem<string>("habitsSave");
-      if (!data) {
-        console.log("Can't fetch data from localStorage");
-        return;
-      }
-      if (JSON.parse(data)) {
-        dispatch({ type: ActionType.FetchData, payload: JSON.parse(data) });
+      const data = await localForage.getItem<string>("habitsSave") ?? JSON.stringify({userId: nanoid(), experience: 0, level: 1, tiles: []});
+      const state = JSON.parse(data);
+      if (state) {
+        state.tiles = state.tiles.map((tile: TileData) => {
+          tile.streak = new StreakBitSet(tile.streak._bit_capacity, tile.streak._buffer);
+          return tile;
+        });
+        dispatch({ type: ActionType.FetchData, payload: state });
         setLoading(false);
         return;
       }

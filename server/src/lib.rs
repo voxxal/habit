@@ -8,7 +8,9 @@ pub mod models;
 pub mod schema;
 mod tile;
 mod user;
+mod state;
 
 pub use self::auth::*;
 pub use self::tile::*;
 pub use self::user::*;
+pub use self::state::*;

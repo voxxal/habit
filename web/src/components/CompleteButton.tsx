@@ -12,7 +12,7 @@ function CompleteButton({
   return (
     //TODO change opinionated margin values for reuse.
     <>
-      {dayjs().isSame(data.lastCheck, "day") ? (
+      {data.streak.get(dayjs().diff(data.startTime, "day")) ? (
         <button className="mt-auto h-10 w-full cursor-default items-center rounded-full border-2 border-dashed border-green-500 font-semibold text-green-500">
           <svg
             className="m-auto block h-6 w-6 fill-green-500"

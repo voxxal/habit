@@ -1,4 +1,5 @@
 #![feature(result_flattening)]
+use actix_cors::Cors;
 use actix_web::{
     cookie::{time::Duration, Cookie},
     get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
@@ -18,25 +19,8 @@ struct UserData {
     password: String,
 }
 
-#[derive(Deserialize, Debug)]
-struct TileData {
-    id: String,
-    name: String,
-    streak: Vec<u8>,
-    start_time: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct State {
-    id: String,
-    experience: f64,
-    level: i16,
-    tiles: Vec<TileData>,
-}
-
 #[post("/sync")]
 async fn sync(data: web::Json<State>) -> impl Responder {
-    println!("{:?}", data);
     HttpResponse::Ok().body("{\"hey\":\"0\"}")
 }
 
@@ -149,7 +133,13 @@ async fn main() -> std::io::Result<()> {
     let pool = Pool::builder().max_size(10).build(manager).unwrap();
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_header()
+            .allow_any_method()
+            .allowed_origin("http://localhost:3000");
+
         App::new()
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .service(account)
             .service(register)

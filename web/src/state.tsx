@@ -2,18 +2,19 @@ import React, { useReducer, createContext } from "react";
 import { nanoid } from "nanoid";
 import dayjs, { Dayjs } from "dayjs";
 import { nextLevelTotalExp } from "./util";
-import { BitSet } from "./bitset";
+import { StreakBitSet } from "./streakbitset";
 
 /*
 TODO: add function signatures
 */
 
 interface TileData {
-  // TODO discription
+  // TODO description
   id: string;
   name: string;
-  streak: BitSet;
+  streak: StreakBitSet;
   startTime: Dayjs;
+  lastCheck: Dayjs;
 }
 // TODO make this a "Data" interface and include is loading/error
 interface State {
@@ -91,8 +92,9 @@ const stateReducer = (state: State, action: Action): State => {
           {
             id: nanoid(),
             name: "",
-            streak: new BitSet(255),
+            streak: new StreakBitSet(255),
             startTime: dayjs(),
+            lastCheck: dayjs(),
           },
         ],
       };
@@ -121,12 +123,13 @@ const stateReducer = (state: State, action: Action): State => {
         (tile) => tile.id === action.payload.id
       );
       if (!newData) return newState;
-      let diff = dayjs().diff(newData.startTime);
-      newData.streak.set(diff);
-      const exp = newState.experience + 1000 * (2 / 1 /* TODO: calculate the streak from the bitset */);
+      newData.streak = new StreakBitSet(newData.streak._bit_capacity, newData.streak._buffer);
+      newData.streak.set(dayjs().diff(newData.startTime, "day"));
+      newData.lastCheck = dayjs();
+      console.log(newData.streak.streak(newData.startTime));
+      const exp = newState.experience + 1000 * (2 / 1);
       let levelUp = 0;
       while (exp >= nextLevelTotalExp(newState.level + levelUp)) levelUp++;
-      debugger;
       return {
         ...newState,
         level: newState.level + levelUp,
